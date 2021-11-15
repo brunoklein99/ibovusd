@@ -51,7 +51,8 @@ if __name__ == '__main__':
     print(sp500_df.tail())
 
     ibov_df = read_ibov_df('ibovusd1963.xml')
-    ibov_df['close'] /= ibov_df['close'].iloc[0]
+    ibov_start_value = ibov_df['close'].iloc[0]
+    ibov_df['close'] /= ibov_start_value
     print(ibov_df.head())
     print(ibov_df.tail())
 
@@ -65,6 +66,11 @@ if __name__ == '__main__':
     plt.xticks(rotation=70, ha='right')
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
     ax.legend()
+
+    ibov = 106334
+    usd_brl = 5.45
+    ibov_usd = ibov / usd_brl / ibov_start_value
+    plt.scatter([datetime.today()], [ibov_usd], color='red')
 
     plt.yscale('log', base=10)
     plt.savefig('chart.png')
