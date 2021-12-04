@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+import yfinance as yf
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -45,19 +46,44 @@ def read_sp_500_tr_df(filename: str) -> pd.DataFrame:
 
 
 if __name__ == '__main__':
-    sp500_df = read_sp_500_tr_df('sp500tr.csv')
-    sp500_df['close'] /= sp500_df['close'].iloc[0]
-    print(sp500_df.head())
-    print(sp500_df.tail())
+    ibov_df = pd.DataFrame(
+        index=pd.date_range(
+            start=datetime(1963, 1, 1),
+            end=datetime.today(),
+            freq='1D'
+        )
+    )
 
-    ibov_df = read_ibov_df('ibovusd1963.xml')
-    ibov_start_value = ibov_df['close'].iloc[0]
-    ibov_df['close'] /= ibov_start_value
-    print(ibov_df.head())
-    print(ibov_df.tail())
+    usd_brl_df = yf.Ticker('USDBRL=X').history(period='max')
+    usd_brl_df.columns = [f'USDBRL_{c}' for c in usd_brl_df.columns]
+    ibov_df = ibov_df.merge(usd_brl_df, how='left', left_index=True, right_index=True)
+
+    ibov_yahoo_df = yf.Ticker('^BVSP').history(period='max')
+    ibov_yahoo_df.columns = [f'IBOV_YAHOO_{c}' for c in ibov_yahoo_df.columns]
+    ibov_df = ibov_df.merge(ibov_yahoo_df, how='left', left_index=True, right_index=True)
+    ibov_df['IBOV_YAHOO_Close'] = ibov_df['IBOV_YAHOO_Close'] / ibov_df['USDBRL_Close']
+    ibov_df = ibov_df[['IBOV_YAHOO_Close']]
+
+    ibov_enfoque_df = read_ibov_df('ibovusd1963.xml')
+    ibov_enfoque_df.set_index('date', inplace=True)
+    ibov_enfoque_df.columns = [f'IBOV_ENFOQUE_{c}' for c in ibov_enfoque_df.columns]
+    ibov_df = ibov_df.merge(ibov_enfoque_df, how='left', left_index=True, right_index=True)
+
+    ibov_df['close'] = ibov_df['IBOV_ENFOQUE_close'].combine_first(ibov_df['IBOV_YAHOO_Close'])
+    ibov_df = ibov_df[['close']]
+    ibov_df = ibov_df.dropna()
+    ibov_df = ibov_df.resample('M').last()
+    ibov_df = ibov_df.reset_index()
+    ibov_df = ibov_df.rename(columns={'index': 'date'})
 
     fig, ax = plt.subplots(figsize=(20, 10))
+
+    ibov_start_value = ibov_df['close'].iloc[0]
+    ibov_df['close'] /= ibov_start_value
+
     ax.plot(ibov_df['date'], ibov_df['close'], label='IBOVESPA / USD')
+
+    sp500_df = read_sp_500_tr_df('sp500tr.csv')
     ax.plot(sp500_df['date'], sp500_df['close'], label='SP 500 TR')
 
     plt.title('IBOVESPA / USD vs SP 500 TR')
@@ -66,11 +92,6 @@ if __name__ == '__main__':
     plt.xticks(rotation=70, ha='right')
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
     ax.legend()
-
-    ibov = 106334
-    usd_brl = 5.45
-    ibov_usd = ibov / usd_brl / ibov_start_value
-    plt.scatter([datetime.today()], [ibov_usd], color='red')
 
     plt.yscale('log', base=10)
     plt.savefig('chart.png')
