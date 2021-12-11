@@ -1,11 +1,15 @@
-from datetime import datetime, timedelta
+from datetime import datetime
+from typing import List, Tuple
 
-import yfinance as yf
-import pandas as pd
-import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import yfinance as yf
 from benedict import benedict as bdict
 from dateutil.relativedelta import relativedelta
+from scipy.signal import find_peaks
+from sklearn.linear_model import LinearRegression
 
 
 def read_ibov_df(filename: str) -> pd.DataFrame:
@@ -45,6 +49,41 @@ def read_sp_500_tr_df(filename: str) -> pd.DataFrame:
     return df
 
 
+def find_tops_and_bottom(series: pd.Series, type_: str) -> List:
+    if type_ == 'top':
+        peaks, _ = find_peaks(series, distance=120)
+        peaks = peaks[:-1]
+    elif type_ == 'bottom':
+        peaks, _ = find_peaks(-series, distance=120)
+    else:
+        raise ValueError(f'Unknown type {type_}')
+    return peaks
+
+
+def get_trend(tops_or_bottoms: List, series: pd.Series) -> np.ndarray:
+    reg = LinearRegression().fit(
+        X=np.array(tops_or_bottoms).reshape((-1, 1)),
+        y=series[tops_or_bottoms]
+    )
+    trend = reg.predict(np.array(range(len(ibov_df))).reshape((len(ibov_df), 1)))
+    return trend
+
+
+def get_trends(series: pd.Series) -> Tuple[List, List]:
+    tops = find_tops_and_bottom(series, type_='top')
+    bottoms = find_tops_and_bottom(series, type_='bottom')
+
+    series_log = np.log(series)
+
+    trend_top_log = get_trend(tops, series_log)
+    trend_bottom_log = get_trend(bottoms, series_log)
+
+    trend_top = np.exp(trend_top_log)
+    trend_bottom = np.exp(trend_bottom_log)
+
+    return trend_top, trend_bottom
+
+
 if __name__ == '__main__':
     ibov_df = pd.DataFrame(
         index=pd.date_range(
@@ -82,6 +121,11 @@ if __name__ == '__main__':
     ibov_df['close'] /= ibov_start_value
 
     ax.plot(ibov_df['date'], ibov_df['close'], label='IBOVESPA / USD')
+    ibov_df['trend_top'], ibov_df['trend_bottom'] = get_trends(ibov_df['close'])
+    ax.plot(ibov_df['date'], ibov_df['trend_top'])
+    ax.plot(ibov_df['date'], ibov_df['trend_bottom'])
+    ibov_df['close / trend_top'] = ibov_df['close'] / ibov_df['trend_top']
+    print(ibov_df.tail())
 
     sp500_df = read_sp_500_tr_df('sp500tr.csv')
     ax.plot(sp500_df['date'], sp500_df['close'], label='SP 500 TR')
