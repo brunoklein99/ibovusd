@@ -125,7 +125,9 @@ if __name__ == '__main__':
     ax.plot(ibov_df['date'], ibov_df['trend_top'])
     ax.plot(ibov_df['date'], ibov_df['trend_bottom'])
     ibov_df['close / trend_top'] = ibov_df['close'] / ibov_df['trend_top']
+    ibov_df['upside'] = ibov_df['trend_top'] / ibov_df['close']
     print(ibov_df.tail())
+    ax.text(0.75, 0.1, f'Upside = {ibov_df["upside"].iloc[-1]:.2f}x USD', transform=ax.transAxes, fontsize=14)
 
     sp500_df = read_sp_500_tr_df('sp500tr.csv')
     ax.plot(sp500_df['date'], sp500_df['close'], label='SP 500 TR')
