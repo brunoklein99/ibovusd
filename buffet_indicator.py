@@ -11,8 +11,8 @@ def parse_datetime(timestamp):
     return datetime.utcfromtimestamp(timestamp / 1000)
 
 
-def get_index_average(index: pd.Series) -> pd.Series:
-    index_log = np.log(index)
+def get_index_average(series: pd.Series) -> pd.Series:
+    index_log = np.log(series)
 
     x = np.array(range(len(index_log))).reshape(-1, 1)
     y = index_log
@@ -22,7 +22,7 @@ def get_index_average(index: pd.Series) -> pd.Series:
 
     average = reg.predict(x)
 
-    return np.exp(average)
+    return pd.Series(data=np.exp(average), index=series.index)
 
 
 def get_gdp() -> pd.Series:
