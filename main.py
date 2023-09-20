@@ -1,14 +1,14 @@
 import matplotlib.pyplot as plt
 
-from buffet_indicator import get_buffet_indicator_norm, get_index_average
-from ibov_usd import get_ibovusd, _get_trend_line
+from common import get_index_average
+from data import get_ibovusd, get_buffet_indicator_norm, get_sp500, get_cpi_index, _get_trend_line
+
+font_size = 16
 
 if __name__ == '__main__':
     ibovusd = get_ibovusd()
     ibovusd_avg = get_index_average(ibovusd)
     buffet_indicator_norm = get_buffet_indicator_norm()
-
-    font_size = 16
 
     fig, ax1 = plt.subplots(figsize=(20, 10))
     color = 'tab:green'
@@ -37,4 +37,24 @@ if __name__ == '__main__':
 
     plt.yscale('log', base=10)
     plt.savefig('images/ibov_usd.jpg')
+
+    plt.clf()
+    fig, ax1 = plt.subplots(figsize=(20, 10))
+    color = 'tab:green'
+    text = 'SP500 / CPI'
+    sp500 = get_sp500()
+    print(sp500.tail())
+    cpi_index = get_cpi_index()
+    cpi_index = cpi_index.reindex(sp500.index)
+    ax1.plot(sp500.index, sp500 / cpi_index, color=color, label=text)
+    ax1.set_ylabel(text, color=color, fontsize=font_size)
+    ax1.set_yscale('log', base=2)
+
+    color = 'tab:red'
+    text = 'Normalized Buffet Indicator'
+    ax2 = ax1.twinx()
+    ax2.plot(buffet_indicator_norm.index, buffet_indicator_norm, color=color, label=text)
+    ax2.set_ylabel(text, color=color, fontsize=font_size)
+
+    plt.savefig('images/sp500_vs_buffet_indicator.jpg')
 
