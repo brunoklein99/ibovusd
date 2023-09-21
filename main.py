@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 from common import get_index_average
-from data import get_ibovusd, get_buffet_indicator_norm, get_sp500, get_cpi_index, _get_trend_line
+from data import get_ibovusd, get_buffet_indicator_norm, get_sp500, get_cpi_index, _get_trend_line, get_gsci
 
 font_size = 16
 
@@ -43,7 +43,6 @@ if __name__ == '__main__':
     color = 'tab:green'
     text = 'SP500 / CPI'
     sp500 = get_sp500()
-    print(sp500.tail())
     cpi_index = get_cpi_index()
     cpi_index = cpi_index.reindex(sp500.index)
     ax1.plot(sp500.index, sp500 / cpi_index, color=color, label=text)
@@ -57,4 +56,24 @@ if __name__ == '__main__':
     ax2.set_ylabel(text, color=color, fontsize=font_size)
 
     plt.savefig('images/sp500_vs_buffet_indicator.jpg')
+
+    #
+
+    plt.clf()
+    fig, ax1 = plt.subplots(figsize=(20, 10))
+    color = 'tab:green'
+    text = 'GSCI'
+    gsci = get_gsci()
+    ax1.plot(gsci.index, gsci, color=color, label=text)
+    ax1.set_ylabel(text, color=color, fontsize=font_size)
+    ax1.set_yscale('log', base=2)
+
+    color = 'tab:red'
+    text = 'IBOVESPA USD'
+    ax2 = ax1.twinx()
+    ax2.plot(ibovusd.index, ibovusd, color=color, label=text)
+    ax2.set_ylabel(text, color=color, fontsize=font_size)
+    ax2.set_yscale('log', base=2)
+
+    plt.savefig('images/gsci_vs_ibov_usd.jpg')
 
