@@ -62,9 +62,11 @@ if __name__ == '__main__':
     plt.clf()
     fig, ax1 = plt.subplots(figsize=(20, 10))
     color = 'tab:green'
-    text = 'GSCI'
+    text = 'GSCI / CPI'
     gsci = get_gsci()
-    ax1.plot(gsci.index, gsci, color=color, label=text)
+    cpi_index = get_cpi_index()
+    cpi_index = cpi_index.reindex(gsci.index)
+    ax1.plot(gsci.index, gsci / cpi_index, color=color, label=text)
     ax1.set_ylabel(text, color=color, fontsize=font_size)
     ax1.set_yscale('log', base=2)
 
