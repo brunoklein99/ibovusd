@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 from common import get_index_average
-from data import get_ibovusd, get_buffet_indicator_norm, get_sp500, get_cpi_index, _get_trend_line, get_gsci
+from data import get_ibovusd, get_buffet_indicator_norm, get_sp500, get_sp500_total_return, get_cpi_index, _get_trend_line, get_gsci
 
 font_size = 16
 
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     fig, ax1 = plt.subplots(figsize=(20, 10))
     color = 'tab:green'
     text = 'SP500 / CPI'
-    sp500 = get_sp500()
+    sp500 = get_sp500_total_return()
     cpi_index = get_cpi_index()
     cpi_index = cpi_index.reindex(sp500.index)
     ax1.plot(sp500.index, sp500 / cpi_index, color=color, label=text)
@@ -56,6 +56,7 @@ if __name__ == '__main__':
     ax2.set_ylabel(text, color=color, fontsize=font_size)
 
     plt.savefig('images/sp500_vs_buffet_indicator.jpg')
+    plt.show()
 
     #
 

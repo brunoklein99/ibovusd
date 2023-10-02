@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 import cpi
+from dateutil.relativedelta import relativedelta
 from scipy.signal import find_peaks
 from benedict import benedict as bdict
 from sklearn.linear_model import LinearRegression
@@ -33,13 +34,27 @@ def get_cpi_index(update=False) -> pd.Series:
     return cpi_index
 
 
-# if __name__ == '__main__':
-#     cpi_index = get_cpi_index()
-
-
 def get_sp500() -> pd.Series:
     sp500 = yf.Ticker('^GSPC').history('max')
     return pd.Series(data=sp500['Close'], index=sp500.index)
+
+
+def get_sp500_total_return() -> pd.Series:
+    df = pd.read_csv('data/sp500tr.csv')
+    df['date'] = df.apply(lambda x: datetime(x['Year'], x['Month'], 1) + relativedelta(months=1) - relativedelta(days=1), axis=1)
+    df = df.rename(columns={'Amount ($)': 'close'})
+    df['close'] = df['close'].str.replace(',', '')
+    df['close'] = pd.to_numeric(df['close'])
+    df['close'] /= df['close'].iloc[0]
+    df = df.set_index('date')
+
+    sp500 = pd.Series(data=df['close'], index=df.index)
+
+    return sp500
+
+
+if __name__ == '__main__':
+    sp500 = get_sp500_total_return()
 
 
 def parse_datetime(timestamp):
