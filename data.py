@@ -41,7 +41,8 @@ def get_sp500() -> pd.Series:
 
 def get_sp500_total_return() -> pd.Series:
     df = pd.read_csv('data/sp500tr.csv')
-    df['date'] = df.apply(lambda x: datetime(x['Year'], x['Month'], 1) + relativedelta(months=1) - relativedelta(days=1), axis=1)
+    df['date'] = df.apply(
+        lambda x: datetime(x['Year'], x['Month'], 1) + relativedelta(months=1) - relativedelta(days=1), axis=1)
     df = df.rename(columns={'Amount ($)': 'close'})
     df['close'] = df['close'].str.replace(',', '')
     df['close'] = pd.to_numeric(df['close'])
@@ -63,6 +64,14 @@ def parse_datetime(timestamp):
 
 def get_gdp() -> pd.Series:
     with open('data/gdp.json', 'r') as fd:
+        df = pd.DataFrame(json.load(fd), columns=['date', 'value'])
+        df['date'] = df['date'].apply(parse_datetime)
+        df = df.set_index('date').squeeze()
+    return df
+
+
+def get_yield_inversion() -> pd.Series:
+    with open('data/yield_inversion.json', 'r') as fd:
         df = pd.DataFrame(json.load(fd), columns=['date', 'value'])
         df['date'] = df['date'].apply(parse_datetime)
         df = df.set_index('date').squeeze()
